@@ -144,3 +144,13 @@ The main page of the application (`dgui/src/app/page.tsx`) uses the `useLangGrap
 When the user submits the form, the `onSubmit` function sends the data back to the agent as a `dgui_response` message.
 
 This implementation demonstrates the core principles of the DGUI protocol, providing a practical example of how AI agents can dynamically generate user interfaces to gather structured data.
+
+## Examples
+
+### Booking trip to Japan
+
+![Request](assets/japan_booking.png)
+
+### Calculate area of Rectangle
+
+![Response](assets/rectangle.png)
