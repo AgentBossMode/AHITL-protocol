@@ -64,33 +64,35 @@ def ask_question(question: str) -> str:
         4. Configuration or Settings Change:
            If the user says: "I'm getting too many alerts, I want to change my notification settings."
            The agent can present a form with: Email Alerts (boolean), Push Notifications (boolean), and a Daily Digest Time (time picker).
+
         5. Missing Context or Details:
            If the user says: "Book a flight for me next week."
            The agent can generate a form to gather: Departure City, Destination City, Departure Date, Return Date, and Preferred Airline.
+
         6. Complex Requests:
            If the user says: "Plan a weekend getaway for me."
            The agent can generate a form to collect: Destination, Budget, Activities (multi-select) and Accommodation Type (dropdown).
+
         7. Ambiguous Commands:
            If the user says: "Set up my profile."
            The agent can generate a form to gather: Full Name, Profile Picture (file upload), Bio (textarea), and Social Media Links (array of URLs).
+
         8. Multi-step Processes:
            If the user says: "What is the area of a rectangle?"
            The agent can generate a form to collect: Length (number) and Width (number).
+
+        9. Confirming what user is referring to:
+           How much does it cost? or What is the price of...?
+           Agent will check from memory what "it" is and could either give confirmation button or a radio in case of multiple items.
     """
     print(f"Interrupting to ask question: {question}")
     value = interrupt(question)
+    print(f"Received answer: {value}")
     return value
-
-# @tool
-# def your_tool_here(your_arg: str):
-#     """Your tool description here."""
-#     print(f"Your tool logic here")
-#     return "Your tool response here."
 
 backend_tools = [
     get_weather,
     ask_question
-    # your_tool_here
 ]
 
 # Extract tool names from backend_tools for comparison
@@ -128,7 +130,11 @@ async def chat_node(state: AgentState, config: RunnableConfig) -> Command[Litera
 
     # 3. Define the system message by which the chat model will be run
     system_message = SystemMessage(
-        content=f"You are a helpful assistant. You shall try answering the queries, If you need more information ALWAYS use the ask_question tool. The current proverbs are {state.get('proverbs', [])}."
+        content="""
+        You are a helpful assistant, you are very careful to not take any assumptions.
+        You have two tools: ask_question and generateJsonSchema tools.
+        If the user query directly asks you to build a form, you must use the generateJsonSchema tool.
+        For other user queries, If you need more information ALWAYS use the ask_question tool, read the definition of ask_question to see if it fits"""
     )
 
     # 4. Run the model to generate a response

@@ -1,17 +1,18 @@
 "use client";
 
-import { useCoAgent, useCopilotAction } from "@copilotkit/react-core";
-import { CopilotKitCSSProperties, CopilotSidebar, } from "@copilotkit/react-ui";
-import { HTMLAttributes, useState } from "react";
+import { useCopilotAction } from "@copilotkit/react-core";
+import { CopilotChat, CopilotKitCSSProperties} from "@copilotkit/react-ui";
+import { useState } from "react";
 import { useLangGraphInterrupt } from "@copilotkit/react-core";
 import validator from "@rjsf/validator-ajv8";
+import { Allotment } from "allotment";
+import "allotment/dist/style.css";
 import { IChangeEvent } from "@rjsf/core";
-import { eventNames } from "process";
 import Form from '@rjsf/mui';
 
-export default function CopilotKitPage() {
-  const [themeColor, setThemeColor] = useState("#6366f1");
+const THEME_COLOR = "#3b82f6";
 
+export default function CopilotKitPage() {
   useLangGraphInterrupt<string>({
     render: ({ event, resolve }) => {
       let schema: object = {};
@@ -43,167 +44,126 @@ export default function CopilotKitPage() {
       return <Form schema={schema} validator={validator} onSubmit={onSubmit} />;
     },
   });
-
-  // 🪁 Frontend Actions: https://docs.copilotkit.ai/guides/frontend-actions
-  useCopilotAction({
-    name: "setThemeColor",
-    parameters: [{
-      name: "themeColor",
-      description: "The theme color to set. Make sure to pick nice colors.",
-      required: true, 
-    }],
-    handler({ themeColor }) {
-      setThemeColor(themeColor);
-    },
-  });
-
   
+
   return (
-    <main style={{ "--copilot-kit-primary-color": themeColor } as CopilotKitCSSProperties}>
-      <YourMainContent themeColor={themeColor} />
-      <CopilotSidebar
-        clickOutsideToClose={false}
-        defaultOpen={true}
+    <div style={{ "--copilot-kit-primary-color": THEME_COLOR, height: "100vh", width: "100vw" } as CopilotKitCSSProperties}>
+      <Allotment defaultSizes={[70, 30]}>
+        <Allotment.Pane>
+          <YourMainContent themeColor={THEME_COLOR} />
+        </Allotment.Pane>
+        <Allotment.Pane>
+          {/* We use CopilotChat for a persistent, inline chat experience */}
+          <CopilotChat
+        
+        className="h-full"
         labels={{
           title: "Popup Assistant",
-          initial: "👋 Hi, there! You're chatting with an agent. This agent comes with a few tools to get you started.\n\nFor example you can try:\n- **Frontend Tools**: \"Set the theme to orange\"\n- **Shared State**: \"Write a proverb about AI\"\n- **Generative UI**: \"Get the weather in SF\"\n\nAs you interact with the agent, you'll see the UI update in real-time to reflect the agent's **state**, **tool calls**, and **progress**."
+          initial: "👋 Hi, there! I'm a dynamic UI agent.\n\nYou can ask me to create a form directly (e.g., \"Create a pizza order form\").\n\nOr, you can ask me to perform a task. If I'm missing information, I'll generate a form to get the details I need. For example:\n- \"Calculate the area of a rectangle\"\n- \"Book a trip to Japan\"\n\nWatch the form appear in real-time!"
         }}
       />
-    </main>
+        </Allotment.Pane>
+      </Allotment>
+    </div>
   );
 }
 
-// State of the agent, make sure this aligns with your agent's state.
-type AgentState = {
-  proverbs: string[];
-}
-
 function YourMainContent({ themeColor }: { themeColor: string }) {
-  // 🪁 Shared State: https://docs.copilotkit.ai/coagents/shared-state
-  const { state, setState } = useCoAgent<AgentState>({
-    name: "sample_agent",
-    initialState: {
-      proverbs: [
-        "CopilotKit may be new, but its the best thing since sliced bread.",
-      ],
-    },
-  })
-
-  // 🪁 Frontend Actions: https://docs.copilotkit.ai/coagents/frontend-actions
   useCopilotAction({
-    name: "addProverb",
+    name: "generateJsonSchema",
     parameters: [{
-      name: "proverb",
-      description: "The proverb to add. Make it witty, short and concise.",
-      required: true,
+      name: "jsonSchema",
+      description: "Generates the rjsf compatible json schema for the form you want to create. The schema should be a valid JSON schema object or a JSON string.",
+      required: true, 
     }],
-    handler: ({ proverb }) => {
-      setState({
-        ...state,
-        proverbs: [...(state.proverbs || []), proverb],
-      });
+    handler({ jsonSchema }) {
+      let schemaObject: object;
+      let schemaString: string;
+
+      if (typeof jsonSchema === 'string') {
+        try {
+          schemaObject = JSON.parse(jsonSchema);
+          schemaString = JSON.stringify(schemaObject, null, 2);
+        } catch (error) {
+          console.error("Failed to parse JSON schema string from agent:", error);
+          return; // Or handle the error appropriately
+        }
+      } else if (typeof jsonSchema === 'object' && jsonSchema !== null) {
+        schemaObject = jsonSchema;
+        schemaString = JSON.stringify(jsonSchema, null, 2);
+      } else {
+        console.error("Invalid schema format received from agent:", jsonSchema);
+        return;
+      }
+
+      setSchema(schemaObject);
+      setSchemaString(schemaString);
     },
   });
 
-  //🪁 Generative UI: https://docs.copilotkit.ai/coagents/generative-ui
-  useCopilotAction({
-    name: "get_weather",
-    description: "Get the weather for a given location.",
-    available: "disabled",
-    parameters: [
-      { name: "location", type: "string", required: true },
-    ],
-    render: ({ args }) => {
-      return <WeatherCard location={args.location} themeColor={themeColor} />
+  const exampleSchemas = {
+    simple: {
+      title: "Simple Form",
+      type: "object",
+      required: ["name"],
+      properties: {
+        name: { type: "string", title: "Name", default: "A. User" },
+        age: { type: "number", title: "Age" },
+        isStudent: { type: "boolean", title: "Is a student?", default: false },
+      },
     },
-  });
+    pizza: {
+      "title": "Pizza Order",
+      "type": "object",
+      "properties": {
+        "size": { "type": "string", "title": "Size", "enum": ["small", "medium", "large"] },
+        "toppings": { "type": "array", "title": "Toppings", "items": { "type": "string" } },
+        "crust": { "type": "string", "title": "Crust", "enum": ["thin", "thick", "stuffed"] }
+      },
+      "required": ["size", "crust"]
+    }
+  };
+
+  const [schema, setSchema] = useState<object>(exampleSchemas.simple);
+  const [formData, setFormData] = useState({});
+  const [schemaString, setSchemaString] = useState(JSON.stringify(exampleSchemas.simple, null, 2));
+
+  const handleSchemaChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newSchemaString = event.target.value;
+    setSchemaString(newSchemaString);
+    try {
+      const newSchema = JSON.parse(newSchemaString);
+      setSchema(newSchema);
+    } catch (error) {
+      // Invalid JSON, do nothing with the schema object
+    }
+  };
 
   return (
     <div
       style={{ backgroundColor: themeColor }}
-      className="h-screen w-screen flex justify-center items-center flex-col transition-colors duration-300"
+      className="h-full w-full flex justify-center items-center flex-col transition-colors duration-300 p-8 overflow-auto"
     >
-      <div className="bg-white/20 backdrop-blur-md p-8 rounded-2xl shadow-xl max-w-2xl w-full">
-        <h1 className="text-4xl font-bold text-white mb-2 text-center">Proverbs</h1>
-        <p className="text-gray-200 text-center italic mb-6">This is a demonstrative page, but it could be anything you want! 🪁</p>
+      <div className="bg-white/20 backdrop-blur-md p-8 rounded-2xl shadow-xl max-w-4xl w-full">
+        <h1 className="text-4xl font-bold text-white mb-2 text-center">Dynamic Generative UI Playground</h1>
+        <p className="text-gray-200 text-center italic mb-6">Edit the schema on the left and see the form update on the right. You can also ask the agent to "create a form to order a pizza".</p>
         <hr className="border-white/20 my-6" />
-        <div className="flex flex-col gap-3">
-          {state.proverbs?.map((proverb, index) => (
-            <div 
-              key={index} 
-              className="bg-white/15 p-4 rounded-xl text-white relative group hover:bg-white/20 transition-all"
-            >
-              <p className="pr-8">{proverb}</p>
-              <button 
-                onClick={() => setState({
-                  ...state,
-                  proverbs: (state.proverbs || []).filter((_, i) => i !== index),
-                })}
-                className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity 
-                  bg-red-500 hover:bg-red-600 text-white rounded-full h-6 w-6 flex items-center justify-center"
-              >
-                ✕
-              </button>
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-4">Schema Editor</h2>
+            <div className="flex gap-2 mb-4">
+              {Object.entries(exampleSchemas).map(([key, value]) => (
+                <button key={key} onClick={() => { setSchema(value); setSchemaString(JSON.stringify(value, null, 2)); }} className="bg-white/30 text-white px-3 py-1 rounded-md text-sm capitalize hover:bg-white/40">{key}</button>
+              ))}
             </div>
-          ))}
-        </div>
-        {state.proverbs?.length === 0 && <p className="text-center text-white/80 italic my-8">
-          No proverbs yet. Ask the assistant to add some!
-        </p>}
-      </div>
-    </div>
-  );
-}
-
-// Simple sun icon for the weather card
-function SunIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-14 h-14 text-yellow-200">
-      <circle cx="12" cy="12" r="5" />
-      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" strokeWidth="2" stroke="currentColor" />
-    </svg>
-  );
-}
-
-// Weather card component where the location and themeColor are based on what the agent
-// sets via tool calls.
-function WeatherCard({ location, themeColor }: { location?: string, themeColor: string }) {
-  return (
-    <div
-    style={{ backgroundColor: themeColor }}
-    className="rounded-xl shadow-xl mt-6 mb-4 max-w-md w-full"
-  >
-    <div className="bg-white/20 p-4 w-full">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-xl font-bold text-white capitalize">{location}</h3>
-          <p className="text-white">Current Weather</p>
-        </div>
-        <SunIcon />
-      </div>
-      
-      <div className="mt-4 flex items-end justify-between">
-        <div className="text-3xl font-bold text-white">70°</div>
-        <div className="text-sm text-white">Clear skies</div>
-      </div>
-      
-      <div className="mt-4 pt-4 border-t border-white">
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div>
-            <p className="text-white text-xs">Humidity</p>
-            <p className="text-white font-medium">45%</p>
+            <textarea value={schemaString} onChange={handleSchemaChange} className="w-full h-96 bg-black/20 text-white p-4 rounded-lg font-mono text-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"></textarea>
           </div>
           <div>
-            <p className="text-white text-xs">Wind</p>
-            <p className="text-white font-medium">5 mph</p>
-          </div>
-          <div>
-            <p className="text-white text-xs">Feels Like</p>
-            <p className="text-white font-medium">72°</p>
+            <h2 className="text-2xl font-bold text-white mb-4">Rendered Form</h2>
+            <Form schema={schema} validator={validator} formData={formData} onChange={(e) => setFormData(e.formData)} onSubmit={(data) => alert("Submitted: " + JSON.stringify(data.formData, null, 2))} />
           </div>
         </div>
       </div>
     </div>
-  </div>
   );
 }
