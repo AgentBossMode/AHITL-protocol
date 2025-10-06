@@ -38,7 +38,7 @@ uv sync
 echo "--- Starting UI and Agent --- "
 
 # Start the UI in the background
-(cd "$ROOT_DIR/dgui" && npm run dev) &
+(cd "$ROOT_DIR/ahitl" && npm run dev) &
 
 # Activate agent environment and start agent in the foreground
-(cd "$ROOT_DIR/dgui/agent" && source .venv/bin/activate && langgraph dev --port 8123)
+(cd "$ROOT_DIR/ahitl/agent" && source .venv/bin/activate && langgraph dev --port 8123)
