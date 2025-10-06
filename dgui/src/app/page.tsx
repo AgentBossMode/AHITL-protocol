@@ -15,33 +15,40 @@ const THEME_COLOR = "#3b82f6";
 export default function CopilotKitPage() {
   useLangGraphInterrupt<string>({
     render: ({ event, resolve }) => {
-      let schema: object = {};
+      let dgui_form: any = {};
       try {
-        // The event.value can be a JSON string or an object representing the RJSF schema.
+        // The event.value can be a JSON string or an object representing the DGUI form.
         if (typeof event.value === 'string') {
-          console.log("Parsing schema from string:", event.value);
-          schema = JSON.parse(event.value);
+          console.log("Parsing DGUI form from string:", event.value);
+          dgui_form = JSON.parse(event.value);
         } else if (typeof event.value === 'object' && event.value !== null) {
-          schema = event.value;
+          dgui_form = event.value;
         }
+
+        if (dgui_form.type !== 'dgui_form' || !dgui_form.schema) {
+          throw new Error("Invalid DGUI form structure.");
+        }
+
       } catch (error) {
-        console.error("Failed to parse RJSF schema:", error);
-        // Gracefully handle cases where the value is not a valid JSON schema
-        return (
-          <div>
-            <p>Invalid form schema received from the agent.</p>
-            <button onClick={() => resolve("Canceled.")}>Close</button>
-          </div>
-        );
+        console.error("Failed to parse DGUI form:", error);
+        // Gracefully handle cases where the value is not a valid DGUI form
+        resolve(JSON.stringify({ type: "dgui_error", message: "Invalid DGUI form structure.", payload: event.value }));
+        return null;
       }
 
       const onSubmit = (data: IChangeEvent) => {
         // When the form is submitted, we resolve the promise with the form data.
-        // The agent expects a string, so we stringify the JSON.
-        resolve(JSON.stringify(data.formData));
+        // The agent expects a dgui_response message.
+        resolve(JSON.stringify({ type: "dgui_response", data: data.formData }));
       };
 
-      return <Form schema={schema} validator={validator} onSubmit={onSubmit} />;
+      return (
+        <div>
+          <h2>{dgui_form.title}</h2>
+          <p>{dgui_form.description}</p>
+          <Form schema={JSON.parse(dgui_form.schema)} uiSchema={JSON.parse(dgui_form.uiSchema)} validator={validator} onSubmit={onSubmit} />
+        </div>
+      );
     },
   });
   
@@ -99,6 +106,25 @@ function YourMainContent({ themeColor }: { themeColor: string }) {
       setSchema(schemaObject);
       setSchemaString(schemaString);
     },
+    render({ args, status }) {
+      return (
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl">
+          <div className="p-6">
+            {status === "complete" ? (
+              <>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">{args.jsonSchema ? JSON.parse(args.jsonSchema).title : "Generated Form"}</h2>
+                <p className="text-gray-600">Your form is generated on the left pane!</p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Generating Form...</h2>
+                <p className="text-gray-600">The agent is generating the form based on your request.</p>
+              </>
+            )}
+          </div>
+        </div>
+      );
+    }
   });
 
   const exampleSchemas = {

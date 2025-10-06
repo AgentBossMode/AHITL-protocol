@@ -25,7 +25,7 @@ This is inefficient for structured data (e.g., configurations, options, numeric 
 DGUI provides a **standard JSON-based schema** that describes what UI should be shown and what kind of data should be returned.
 
 > Example: Instead of saying  
-> “Please type your project name, framework, and whether you use TypeScript”,  
+> “Please provide the departure date, destination city, and return date for your flight to Japan”,  
 > the model can emit a DGUI form schema that renders appropriate inputs.
 
 ---
@@ -41,42 +41,47 @@ The DGUI protocol defines two primary message types:
 | `dgui_form` | Message containing schema for rendering a form |
 | `dgui_response` | Message containing structured data entered by user |
 
----
-
 ### 3.2. Form Message Structure
 
-A `dgui_form` message must conform to the following shape:
+A `dgui_form` message is sent from the agent to the client. It must conform to the following shape:
 
 ```json
 {
   "type": "dgui_form",
-  "title": "Collect project setup details",
-  "description": "Provide inputs to configure your project environment.",
+  "title": "Book a Flight to Japan",
+  "description": "Please provide the details for your flight booking.",
   "schema": {
     "type": "object",
     "properties": {
-      "project_name": {
+      "destinationCity": {
         "type": "string",
-        "title": "Project Name"
+        "title": "Destination City",
+        "default": "Tokyo"
       },
-      "framework": {
+      "departureDate": {
         "type": "string",
-        "title": "Framework",
-        "enum": ["React", "Next.js", "Vite"]
+        "title": "Departure Date",
+        "format": "date"
       },
-      "use_typescript": {
-        "type": "boolean",
-        "title": "Use TypeScript?"
+      "returnDate": {
+        "type": "string",
+        "title": "Return Date",
+        "format": "date"
       }
     },
-    "required": ["project_name", "framework"]
+    "required": ["destinationCity", "departureDate"]
   },
   "uiSchema": {
-    "framework": { "ui:widget": "select" }
+    "departureDate": {
+      "ui:widget": "date"
+    },
+    "returnDate": {
+      "ui:widget": "date"
+    }
   },
   "metadata": {
     "version": "0.1",
-    "agent_context": "project_setup"
+    "agent_context": "flight_booking"
   }
 }
 ```
@@ -100,9 +105,9 @@ When a user submits the form, clients must emit a `dgui_response` message:
 {
   "type": "dgui_response",
   "data": {
-    "project_name": "promptius",
-    "framework": "Vite",
-    "use_typescript": true
+    "destinationCity": "Tokyo",
+    "departureDate": "2025-12-25",
+    "returnDate": "2026-01-10"
   }
 }
 ```
@@ -117,6 +122,8 @@ When a user submits the form, clients must emit a `dgui_response` message:
 
 ```text
    Agent                                Client                               User
+     |                                      |                                  |
+     | --- User says: "Book a ticket to Japan" --> |                                  |
      |                                      |                                  |
      | --- Emits dgui_form JSON ---------->  |                                  |
      |                                      |                                  |
@@ -138,18 +145,62 @@ LLMs should be explicitly instructed to emit DGUI-compatible JSON when structure
 **Prompt Template Example:**
 
 ```text
-If you require the user to provide structured input, 
-output only a JSON object following this structure:
+You are a helpful assistant, you are very careful to not take any assumptions.
+For user queries, If you need more information ALWAYS use the ask_question tool, read the definition of ask_question to see if it fits
+```
 
-{
-  "type": "dgui_form",
-  "title": "...",
-  "description": "...",
-  "schema": {...},
-  "uiSchema": {... (optional) ...}
-}
+**ask_question tool description:**
 
-Do not include natural language outside of the JSON.
+```text
+Asks the user for structured information by generating a form.
+
+This tool should be used when you need to gather multiple pieces of information
+from the user to proceed. The `question` parameter must be a serialized JSON string that
+conforms to the react-jsonschema-form (RJSF) schema.
+
+The agent is responsible for generating the RJSF schema as a JSON string
+based on the information it needs to collect from the user.
+
+Args:
+    question: A serialized JSON string representing a form schema that adheres to react-jsonschema-form.
+    uiSchema: A serialized JSON string representing the UI schema for the form.
+
+Examples:
+    1. Subtle Creation Task:
+        If the user says: "I need to schedule a meeting with the marketing team about the Q3 launch."
+        The agent can infer the need for structured data and generate a form for: Meeting Title, Attendees (array of emails), Date/Time, and Agenda (textarea).
+
+    2. Implied Filtering or Searching:
+        If the user says: "I'm looking for a used car, maybe a Honda or Toyota, under $15,000."
+        The agent can generate a search form with fields for: Make (multi-select), Model, and Max Price (number slider).
+
+    3. Vague Update Request:
+        If the user says: "My shipping address is wrong, I moved recently."
+        The agent can generate a form to update the address with fields for: Street, City, State, and Zip Code.
+
+    4. Configuration or Settings Change:
+        If the user says: "I'm getting too many alerts, I want to change my notification settings."
+        The agent can present a form with: Email Alerts (boolean), Push Notifications (boolean), and a Daily Digest Time (time picker).
+
+    5. Missing Context or Details:
+        If the user says: "Book a flight for me next week."
+        The agent can generate a form to gather: Departure City, Destination City, Departure Date, Return Date, and Preferred Airline.
+
+    6. Complex Requests:
+        If the user says: "Plan a weekend getaway for me."
+        The agent can generate a form to collect: Destination, Budget, Activities (multi-select) and Accommodation Type (dropdown).
+
+    7. Ambiguous Commands:
+        If the user says: "Set up my profile."
+        The agent can generate a form to gather: Full Name, Profile Picture (file upload), Bio (textarea), and Social Media Links (array of URLs).
+
+    8. Multi-step Processes:
+        If the user says: "What is the area of a rectangle?"
+        The agent can generate a form to collect: Length (number) and Width (number).
+
+    9. Confirming what user is referring to:
+        How much does it cost? or What is the price of...?
+        Agent will check from memory what "it" is and could either give confirmation button or a radio in case of multiple items.
 ```
 
 This ensures the model produces valid, parseable DGUI payloads.
@@ -232,16 +283,12 @@ Implementations should fail gracefully and notify both the user and agent enviro
 
 - [JSON Schema](https://json-schema.org/)
 - [React JSON Schema Form (RJSF)](https://rjsf-team.github.io/react-jsonschema-form/)
-- [LangGraph](https://www.langchain.com/langgraph)
-- [CopilotKit](https://www.copilotkit.ai/)
-- [LangChain](https://www.langchain.com/)
 
 ---
 
 ## 12. Contact
 
-**Author:** [Kanishk Gupta](https://github.com/kanishkgpt)  
-**Twitter/X:** [@kanishkgpt](https://twitter.com/kanishkgpt)  
-**Spec Repository:** [https://github.com/kanishkgpt/dgui](https://github.com/kanishkgpt/dgui)
+**Author:** [https://github.com/kanishkgupta2000](Kanishk Gupta)  
+**Spec Repository:** [https://github.com/AgentBossMode/DGUI-protocol](https://github.com/AgentBossMode/DGUI-protocol)
 
 ---

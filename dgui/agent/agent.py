@@ -35,7 +35,7 @@ def get_weather(location: str):
     return f"The weather for {location} is 70 degrees."
 
 @tool 
-def ask_question(question: str) -> str:
+def ask_question(question: str, uiSchema: str) -> str:
     """Asks the user for structured information by generating a form.
     
     This tool should be used when you need to gather multiple pieces of information
@@ -47,7 +47,7 @@ def ask_question(question: str) -> str:
     
     Args:
         question: A serialized JSON string representing a form schema that adheres to react-jsonschema-form.
-    
+        uiSchema: A serialized JSON string representing the UI schema for the form.
     Examples:
         1. Subtle Creation Task:
            If the user says: "I need to schedule a meeting with the marketing team about the Q3 launch."
@@ -86,6 +86,16 @@ def ask_question(question: str) -> str:
            Agent will check from memory what "it" is and could either give confirmation button or a radio in case of multiple items.
     """
     print(f"Interrupting to ask question: {question}")
+    print(f"With uiSchema: {uiSchema}")
+
+    # wrap the question into the dgui_form format
+    question = {
+        "type": "dgui_form",
+        "title": "Additional Information Required",
+        "description": "Please fill out the following form to provide the necessary information.",
+        "schema": question,
+        "uiSchema": uiSchema
+    }
     value = interrupt(question)
     print(f"Received answer: {value}")
     return value
@@ -112,7 +122,7 @@ async def chat_node(state: AgentState, config: RunnableConfig) -> Command[Litera
     """
 
     # 1. Define the model
-    model = ChatOpenAI(model="gpt-4o")
+    model = ChatOpenAI(model="gpt-4o-mini")
 
     # 2. Bind the tools to the model
     model_with_tools = model.bind_tools(
@@ -134,7 +144,9 @@ async def chat_node(state: AgentState, config: RunnableConfig) -> Command[Litera
         You are a helpful assistant, you are very careful to not take any assumptions.
         You have two tools: ask_question and generateJsonSchema tools.
         If the user query directly asks you to build a form, you must use the generateJsonSchema tool.
-        For other user queries, If you need more information ALWAYS use the ask_question tool, read the definition of ask_question to see if it fits"""
+        For other user queries, If you need more information ALWAYS use the ask_question tool, read the definition of ask_question to see if it fits
+        """
+
     )
 
     # 4. Run the model to generate a response
