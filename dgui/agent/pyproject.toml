@@ -1,0 +1,14 @@
+[project]
+name = "agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "langchain==0.3.27",
+    "langchain-openai>=0.3.34",
+    "langgraph==0.6.6",
+    "langgraph-cli[inmem]==0.3.3",
+    "langsmith==0.4.23",
+    "python-dotenv>=1.1.1",
+]
