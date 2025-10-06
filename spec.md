@@ -288,7 +288,7 @@ Implementations should fail gracefully and notify both the user and agent enviro
 
 ## 12. Contact
 
-**Author:** [https://github.com/kanishkgupta2000](Kanishk Gupta)  
+**Author:** [Kanishk Gupta](https://github.com/kanishkgupta2000)  
 **Spec Repository:** [https://github.com/AgentBossMode/DGUI-protocol](https://github.com/AgentBossMode/DGUI-protocol)
 
 ---
