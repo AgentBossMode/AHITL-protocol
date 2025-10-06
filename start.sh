@@ -11,12 +11,12 @@ ROOT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 # --- Frontend Setup ---
 echo "--- Installing frontend dependencies ---"
-cd "$ROOT_DIR/dgui"
+cd "$ROOT_DIR/ahitl"
 npm install
 
 # --- Agent Setup ---
 echo "--- Setting up agent environment ---"
-cd "$ROOT_DIR/dgui/agent"
+cd "$ROOT_DIR/ahitl/agent"
 
 # Check if uv is installed
 if ! command -v uv &> /dev/null

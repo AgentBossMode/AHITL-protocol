@@ -1,4 +1,4 @@
-# DGUI Specification v0.1 (Draft)
+# AHITL Specification v0.1 (Draft)
 
 **Version:** 0.1  
 **Status:** Experimental  
@@ -9,7 +9,7 @@
 
 ## 1. Overview
 
-**DGUI (Dynamic Graphical User Interface)** is an open protocol that enables **AI agents to generate interactive UI components on demand**.
+**AHITL (Agentic Human in the loop)** is an open protocol that enables **AI agents to generate interactive UI components on demand**.
 
 Agents can describe forms declaratively via JSON Schema, allowing clients (frontends, SDKs, or tools) to render structured inputs instead of relying solely on free-text prompts.
 
@@ -22,11 +22,11 @@ This creates a **bidirectional communication layer** between reasoning models an
 LLM-based agents typically use plain-text conversations to ask for input.  
 This is inefficient for structured data (e.g., configurations, options, numeric parameters).
 
-DGUI provides a **standard JSON-based schema** that describes what UI should be shown and what kind of data should be returned.
+AHITL provides a **standard JSON-based schema** that describes what UI should be shown and what kind of data should be returned.
 
 > Example: Instead of saying  
 > “Please provide the departure date, destination city, and return date for your flight to Japan”,  
-> the model can emit a DGUI form schema that renders appropriate inputs.
+> the model can emit a AHITL form schema that renders appropriate inputs.
 
 ---
 
@@ -34,20 +34,20 @@ DGUI provides a **standard JSON-based schema** that describes what UI should be 
 
 ### 3.1. Message Types
 
-The DGUI protocol defines two primary message types:
+The AHITL protocol defines two primary message types:
 
 | Type | Description |
 |------|--------------|
-| `dgui_form` | Message containing schema for rendering a form |
-| `dgui_response` | Message containing structured data entered by user |
+| `ahitl_form` | Message containing schema for rendering a form |
+| `ahitl_response` | Message containing structured data entered by user |
 
 ### 3.2. Form Message Structure
 
-A `dgui_form` message is sent from the agent to the client. It must conform to the following shape:
+A `ahitl_form` message is sent from the agent to the client. It must conform to the following shape:
 
 ```json
 {
-  "type": "dgui_form",
+  "type": "ahitl_form",
   "title": "Book a Flight to Japan",
   "description": "Please provide the details for your flight booking.",
   "schema": {
@@ -87,7 +87,7 @@ A `dgui_form` message is sent from the agent to the client. It must conform to t
 ```
 
 #### Required fields
-- `type`: Always `"dgui_form"`.
+- `type`: Always `"ahitl_form"`.
 - `schema`: A valid [JSON Schema](https://json-schema.org/) object describing expected fields.
 
 #### Optional fields
@@ -99,11 +99,11 @@ A `dgui_form` message is sent from the agent to the client. It must conform to t
 
 ### 3.3. Response Message Structure
 
-When a user submits the form, clients must emit a `dgui_response` message:
+When a user submits the form, clients must emit a `ahitl_response` message:
 
 ```json
 {
-  "type": "dgui_response",
+  "type": "ahitl_response",
   "data": {
     "destinationCity": "Tokyo",
     "departureDate": "2025-12-25",
@@ -113,8 +113,8 @@ When a user submits the form, clients must emit a `dgui_response` message:
 ```
 
 #### Required fields
-- `type`: Always `"dgui_response"`.
-- `data`: A JSON object matching the schema defined in the previous `dgui_form`.
+- `type`: Always `"ahitl_response"`.
+- `data`: A JSON object matching the schema defined in the previous `ahitl_form`.
 
 ---
 
@@ -125,13 +125,13 @@ When a user submits the form, clients must emit a `dgui_response` message:
      |                                      |                                  |
      | --- User says: "Book a ticket to Japan" --> |                                  |
      |                                      |                                  |
-     | --- Emits dgui_form JSON ---------->  |                                  |
+     | --- Emits ahitl_form JSON ---------->  |                                  |
      |                                      |                                  |
      |                                      | --- Renders interactive form --> |
      |                                      |                                  |
      |                                      |  <-- Fills form fields --------- |
      |                                      |                                  |
-     |  <-- Sends dgui_response JSON -----  |                                  |
+     |  <-- Sends ahitl_response JSON -----  |                                  |
      |                                      |                                  |
      | --- Resumes reasoning with input --> |                                  |
 ```
@@ -140,7 +140,7 @@ When a user submits the form, clients must emit a `dgui_response` message:
 
 ## 4. Agent Prompting Convention
 
-LLMs should be explicitly instructed to emit DGUI-compatible JSON when structured input is needed.
+LLMs should be explicitly instructed to emit AHITL-compatible JSON when structured input is needed.
 
 **Prompt Template Example:**
 
@@ -203,40 +203,32 @@ Examples:
         Agent will check from memory what "it" is and could either give confirmation button or a radio in case of multiple items.
 ```
 
-This ensures the model produces valid, parseable DGUI payloads.
+This ensures the model produces valid, parseable AHITL payloads.
 
 ---
 
 ## 5. Client Implementation Guidelines
 
-Any frontend or SDK implementing DGUI should:
+Any frontend or SDK implementing AHITL should:
 
-1. Detect messages with `"type": "dgui_form"`.
+1. Detect messages with `"type": "ahitl_form"`.
 2. Parse and validate the `schema` field.
 3. Render interactive components using a compatible library (e.g., [RJSF](https://rjsf-team.github.io/react-jsonschema-form/)).
-4. On submission, return a `dgui_response` message to the runtime environment.
-
-### Reference Clients
-
-| Package | Description |
-|----------|--------------|
-| `@dgui/react` | React-based form renderer |
-| `@dgui/langchain` | Helper for LangChain tool output/input |
-| `@dgui/examples` | Sample projects demonstrating DGUI forms |
+4. On submission, return a `ahitl_response` message to the runtime environment.
 
 ---
 
 ## 6. Runtime Behavior
 
-- **Stateless:** Each DGUI message is independent; the agent handles continuity.  
-- **Transport-agnostic:** DGUI can be exchanged over WebSockets, HTTP, or in-memory channels.  
+- **Stateless:** Each AHITL message is independent; the agent handles continuity.  
+- **Transport-agnostic:** AHITL can be exchanged over WebSockets, HTTP, or in-memory channels.  
 - **LLM-neutral:** Works with any model that supports structured output (e.g., OpenAI, Anthropic, Mistral).  
 
 ---
 
 ## 7. Validation Rules
 
-1. All DGUI payloads **must be valid JSON**.
+1. All AHITL payloads **must be valid JSON**.
 2. `schema` **must** conform to JSON Schema Draft-07 or newer.
 3. `uiSchema` is optional and non-normative.
 4. Clients **must not** modify `schema` fields before rendering.
@@ -246,11 +238,11 @@ Any frontend or SDK implementing DGUI should:
 
 ## 8. Error Handling
 
-If a client receives invalid DGUI JSON:
+If a client receives invalid AHITL JSON:
 
 ```json
 {
-  "type": "dgui_error",
+  "type": "ahitl_error",
   "message": "Invalid JSON schema. Missing 'properties' field.",
   "payload": { ...original data... }
 }
@@ -262,7 +254,7 @@ Implementations should fail gracefully and notify both the user and agent enviro
 
 ## 9. Versioning
 
-- DGUI follows **semantic versioning (semver)**.
+- AHITL follows **semantic versioning (semver)**.
 - `metadata.version` is optional but recommended.
 - Backward compatibility is expected between minor versions (0.x.y).
 
@@ -275,7 +267,7 @@ Implementations should fail gracefully and notify both the user and agent enviro
 | Stateful Sessions | Allow multi-step form continuation |
 | Typed Bindings | Zod / TypeBox schema helpers |
 | Component Metadata | `ui:hint`, `ui:group`, conditional visibility |
-| DGUI Server | Persistent form registry for agent frameworks |
+| AHITL Server | Persistent form registry for agent frameworks |
 
 ---
 
@@ -289,6 +281,6 @@ Implementations should fail gracefully and notify both the user and agent enviro
 ## 12. Contact
 
 **Author:** [Kanishk Gupta](https://github.com/kanishkgupta2000)  
-**Spec Repository:** [https://github.com/AgentBossMode/DGUI-protocol](https://github.com/AgentBossMode/DGUI-protocol)
+**Spec Repository:** [https://github.com/AgentBossMode/ahitl-protocol](https://github.com/AgentBossMode/ahitl-protocol)
 
 ---

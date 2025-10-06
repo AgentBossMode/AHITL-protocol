@@ -15,38 +15,38 @@ const THEME_COLOR = "#3b82f6";
 export default function CopilotKitPage() {
   useLangGraphInterrupt<string>({
     render: ({ event, resolve }) => {
-      let dgui_form: any = {};
+      let ahitl_form: any = {};
       try {
-        // The event.value can be a JSON string or an object representing the DGUI form.
+        // The event.value can be a JSON string or an object representing the AHITL form.
         if (typeof event.value === 'string') {
-          console.log("Parsing DGUI form from string:", event.value);
-          dgui_form = JSON.parse(event.value);
+          console.log("Parsing AHITL form from string:", event.value);
+          ahitl_form = JSON.parse(event.value);
         } else if (typeof event.value === 'object' && event.value !== null) {
-          dgui_form = event.value;
+          ahitl_form = event.value;
         }
 
-        if (dgui_form.type !== 'dgui_form' || !dgui_form.schema) {
-          throw new Error("Invalid DGUI form structure.");
+        if (ahitl_form.type !== 'ahitl_form' || !ahitl_form.schema) {
+          throw new Error("Invalid AHITL form structure.");
         }
 
       } catch (error) {
-        console.error("Failed to parse DGUI form:", error);
-        // Gracefully handle cases where the value is not a valid DGUI form
-        resolve(JSON.stringify({ type: "dgui_error", message: "Invalid DGUI form structure.", payload: event.value }));
+        console.error("Failed to parse AHITL form:", error);
+        // Gracefully handle cases where the value is not a valid AHITL form
+        resolve(JSON.stringify({ type: "ahitl_error", message: "Invalid AHITL form structure.", payload: event.value }));
         return null;
       }
 
       const onSubmit = (data: IChangeEvent) => {
         // When the form is submitted, we resolve the promise with the form data.
-        // The agent expects a dgui_response message.
-        resolve(JSON.stringify({ type: "dgui_response", data: data.formData }));
+        // The agent expects a ahitl_response message.
+        resolve(JSON.stringify({ type: "ahitl_response", data: data.formData }));
       };
 
       return (
         <div>
-          <h2>{dgui_form.title}</h2>
-          <p>{dgui_form.description}</p>
-          <Form schema={JSON.parse(dgui_form.schema)} uiSchema={JSON.parse(dgui_form.uiSchema)} validator={validator} onSubmit={onSubmit} />
+          <h2>{ahitl_form.title}</h2>
+          <p>{ahitl_form.description}</p>
+          <Form schema={JSON.parse(ahitl_form.schema)} uiSchema={JSON.parse(ahitl_form.uiSchema)} validator={validator} onSubmit={onSubmit} />
         </div>
       );
     },
@@ -171,7 +171,7 @@ function YourMainContent({ themeColor }: { themeColor: string }) {
       className="h-full w-full flex justify-center items-center flex-col transition-colors duration-300 p-8 overflow-auto"
     >
       <div className="bg-white/20 backdrop-blur-md p-8 rounded-2xl shadow-xl max-w-4xl w-full">
-        <h1 className="text-4xl font-bold text-white mb-2 text-center">Dynamic Generative UI Playground</h1>
+        <h1 className="text-4xl font-bold text-white mb-2 text-center">Agentic Human-in-the-loop Playground</h1>
         <p className="text-gray-200 text-center italic mb-6">Edit the schema on the left and see the form update on the right. You can also ask the agent to "create a form to order a pizza".</p>
         <hr className="border-white/20 my-6" />
         <div className="grid md:grid-cols-2 gap-8">

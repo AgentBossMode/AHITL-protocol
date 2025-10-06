@@ -88,9 +88,9 @@ def ask_question(question: str, uiSchema: str) -> str:
     print(f"Interrupting to ask question: {question}")
     print(f"With uiSchema: {uiSchema}")
 
-    # wrap the question into the dgui_form format
+    # wrap the question into the ahitl_form format
     question = {
-        "type": "dgui_form",
+        "type": "ahitl_form",
         "title": "Additional Information Required",
         "description": "Please fill out the following form to provide the necessary information.",
         "schema": question,
