@@ -278,7 +278,7 @@ Implementations should fail gracefully and notify both the user and agent enviro
 ---
 
 ## 12. Contact
-
+** Contact us:** [Promptius Tech](agentmom123@gmail.com)
 **Spec Repository:** [https://github.com/AgentBossMode/ahitl-protocol](https://github.com/AgentBossMode/ahitl-protocol)
 
 ---
