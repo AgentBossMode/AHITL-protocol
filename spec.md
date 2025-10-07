@@ -2,7 +2,6 @@
 
 **Version:** 0.1  
 **Status:** Experimental  
-**Author:** Kanishk Gupta  
 **License:** MIT  
 
 ---
@@ -280,7 +279,6 @@ Implementations should fail gracefully and notify both the user and agent enviro
 
 ## 12. Contact
 
-**Author:** [Kanishk Gupta](https://github.com/kanishkgupta2000)  
 **Spec Repository:** [https://github.com/AgentBossMode/ahitl-protocol](https://github.com/AgentBossMode/ahitl-protocol)
 
 ---
